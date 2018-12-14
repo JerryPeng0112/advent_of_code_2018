@@ -1,21 +1,21 @@
 from functools import reduce
 
 def main():
-    input = []
-    readFiles(input)
+    inputs = []
+    readFiles(inputs)
 
-    result = getRepeatedFreq(input)
+    result = getRepeatedFreq(inputs)
     print(result)
 
-def getRepeatedFreq(input):
+def getRepeatedFreq(inputs):
     sum = 0
     visited = {}
     visited[sum] = True
-    inputLen = len(input)
+    inputsLen = len(inputs)
 
     while(True):
-        for i in range(inputLen):
-            sum += input[i]
+        for i in range(inputsLen):
+            sum += inputs[i]
             if sum in visited:
                 return sum
             else:
@@ -24,10 +24,10 @@ def getRepeatedFreq(input):
 def processFileLine(line):
     return int(line)
 
-def readFiles(input):
+def readFiles(inputs):
     file = open("input.txt", "r")
     for line in file:
-        input.append(processFileLine(line))
+        inputs.append(processFileLine(line))
 
 if __name__ == "__main__":
     main()
