@@ -1,19 +1,16 @@
-from functools import reduce
-
 def main():
-    inputs = []
-    readFiles(inputs)
+    data = readFiles()
 
-    result = calcCheckSum(inputs, len(inputs))
+    result = calcCheckSum(data, len(data))
     print(result)
 
-def calcCheckSum(inputs, inputsLen):
+def calcCheckSum(data, dataLen):
     twos = 0
     threes = 0
 
-    for i in range(inputsLen):
+    for i in range(dataLen):
         letterCount = [0] * 26
-        id = inputs[i]
+        id = data[i]
 
         # Find letter frequency
         for i in id:
@@ -37,10 +34,12 @@ def letterIndex(letter):
 def processFileLine(line):
     return line[0:-1]
 
-def readFiles(inputs):
+def readFiles():
+    data = []
     file = open("input.txt", "r")
     for line in file:
-        inputs.append(processFileLine(line))
+        data.append(processFileLine(line))
+    return data
 
 if __name__ == "__main__":
     main()

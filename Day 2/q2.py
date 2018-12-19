@@ -1,34 +1,33 @@
-from functools import reduce
-
 def main():
-    inputs = []
-    readFiles(inputs)
+    data = readFiles()
 
-    result = calcSimilarID(inputs, len(inputs))
+    result = calcSimilarID(data, len(data))
     print(result)
 
-def calcSimilarID(inputs, inputsLen):
-    sortedInput = inputs.sort()
-    idLen = len(inputs[0])
+def calcSimilarID(data, dataLen):
+    sortedInput = data.sort()
+    idLen = len(data[0])
 
-    for i in range(inputsLen):
+    for i in range(dataLen):
         diffCount = 0
         diffIdx = -1
         for j in range(idLen): 
-            if inputs[i][j] != inputs[i + 1][j]:
+            if data[i][j] != data[i + 1][j]:
                 diffCount += 1
                 diffIdx = j
 
         if diffCount == 1:
-            return inputs[i][:diffIdx] + inputs[i][diffIdx + 1:]
+            return data[i][:diffIdx] + data[i][diffIdx + 1:]
 
 def processFileLine(line):
     return line[0:-1]
 
-def readFiles(inputs):
+def readFiles():
+    data = []
     file = open("input.txt", "r")
     for line in file:
-        inputs.append(processFileLine(line))
+        data.append(processFileLine(line))
+    return data
 
 if __name__ == "__main__":
     main()
