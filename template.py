@@ -1,9 +1,7 @@
-from functools import reduce
-
 def main():
+
     data = readFiles()
 
-    result = reduce(lambda x, y: x + y, data)
     print(result)
 
 def processFileLine(line):

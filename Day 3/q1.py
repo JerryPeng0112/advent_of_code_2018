@@ -31,16 +31,16 @@ def countOverlap(grid):
     return count
 
 def processFileLine(line):
-    data = {}
+    datum = {}
     lineSplit = line.split()
     startCoor = lineSplit[2].split(',')
     startCoor[1] = startCoor[1][:-1]
     dim = line.split()[3].split('x')
-    data["startX"] = int(startCoor[0])
-    data["startY"] = int(startCoor[1])
-    data["endX"] = data["startX"] + int(dim[0])
-    data["endY"] = data["startY"] + int(dim[1])
-    return data
+    datum["startX"] = int(startCoor[0])
+    datum["startY"] = int(startCoor[1])
+    datum["endX"] = datum["startX"] + int(dim[0])
+    datum["endY"] = datum["startY"] + int(dim[1])
+    return datum
 
 def readFiles():
     data = []
