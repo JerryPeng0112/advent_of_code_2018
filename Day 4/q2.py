@@ -12,9 +12,8 @@ def main():
     data = readFiles()
 
     soldierSchedules = processData(data)
-    maxCountID = getMaxCountID(soldierSchedules)
-    sleepMinute = calcSleepMinute(soldierSchedules[maxCountID])
-    result = int(maxCountID) * sleepMinute
+    ID, mostFreqMinute = calcMostFreqMinute(soldierSchedules)
+    result = int(ID) * mostFreqMinute
 
     print(result)
 
@@ -40,40 +39,25 @@ def processData(data):
                 soldierSchedules[currID][-1][t] = Status.SLEEP.value
         
     return soldierSchedules
-
-def getMaxCountID(soldierSchedules):
-    maxCount = -1
-    maxCountID = None
+    
+def calcMostFreqMinute(soldierSchedules):
+    ID, mostFreqMinute, maxCount = -1, -1, -1
 
     for id, schedule in soldierSchedules.items():
-        count = 0
+        count = [0 for i in range(60)]
+        
         for shift in schedule:
             for t in range(60):
                 if shift[t] == Status.SLEEP.value:
-                    count += 1
+                    count[t] += 1
 
-        if count > maxCount:
-            maxCount = count
-            maxCountID = id
-
-    return maxCountID
-    
-def calcSleepMinute(schedule):
-    count = [0 for i in range(60)]
-    for shift in schedule:
         for t in range(60):
-            if shift[t] == Status.SLEEP.value:
-                count[t] += 1
+            if count[t] > maxCount:
+                maxCount = count[t]
+                mostFreqMinute = t
+                ID = id
 
-    maxMinute = -1
-    maxIndex = -1
-
-    for t in range(60):
-        if count[t] > maxMinute:
-            maxMinute = count[t]
-            maxIndex = t
-
-    return maxIndex
+    return ID, mostFreqMinute
 
 def processFileLine(line):
     matches = re.compile("\[(.*)\] (.*)").findall(line)[0]
