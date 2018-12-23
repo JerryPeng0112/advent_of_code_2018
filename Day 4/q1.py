@@ -99,6 +99,7 @@ def readFiles():
     file = open("input.txt", "r")
     for line in file:
         data.append(processFileLine(line))
+    file.close()
 
     return sorted(data, key=lambda x : x["datetime"])
 

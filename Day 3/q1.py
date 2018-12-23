@@ -47,6 +47,7 @@ def readFiles():
     file = open("input.txt", "r")
     for line in file:
         data.append(processFileLine(line))
+    file.close()
     return data
 
 if __name__ == "__main__":
