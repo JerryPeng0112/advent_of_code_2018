@@ -1,17 +1,17 @@
 def main():
 
-    data = readFiles()
+    input = readFiles()
 
-    print(result)
+    print(input)
 
-def processFileLine(line):
-    return int(line)
+def readLine(line):
+    return line
 
 def readFiles():
     data = []
     file = open("input.txt", "r")
     for line in file:
-        data.append(processFileLine(line))
+        data.append(readLine(line))
     return data
 
 if __name__ == "__main__":
