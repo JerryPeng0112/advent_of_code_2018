@@ -1,8 +1,8 @@
 def main():
 
-    input = readFiles()
+    data = readFiles()
 
-    print(input)
+    print(data)
 
 
 def readLine(line):
