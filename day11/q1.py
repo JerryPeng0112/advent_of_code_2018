@@ -37,8 +37,8 @@ def calcMaxSquare(grid):
 
     # Find x, y of max total power level
     max = -100
-    maxX = -1
-    maxY = -1
+    x = -1
+    y = -1
 
     for i in range(298):
         for j in range(298):
