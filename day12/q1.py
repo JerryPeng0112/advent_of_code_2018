@@ -32,12 +32,15 @@ def calcPlantSum(state, lookup):
 def addExtensions(state):
     firstPotIdx = state.index('#')
     negativeAdded = 0
+    negativeAdded = 5 - firstPotIdx
 
     if firstPotIdx < 5:
-        negativeAdded = 5 - firstPotIdx
         state = ('.' * negativeAdded) + state
+    else:
+        state = state[firstPotIdx - 5:]
 
     lastPotIdx = state[::-1].index('#')
+    
     if lastPotIdx < 5:
         state += '.' * (5 - lastPotIdx)
 
