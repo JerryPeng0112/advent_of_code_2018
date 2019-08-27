@@ -143,6 +143,9 @@ def findCrash(mineMap, carts):
             if (x, y) in coors.keys():
                 return x, y
 
+            if (x, y) in prevCoors.keys():
+                return x, y
+
             # Update coordinate record
             cartID = cart.id
             coors[(x, y)] = cartID
@@ -153,16 +156,6 @@ def findCrash(mineMap, carts):
         #print(coors)
         #print(idToCoors)
         #printMap(mineMap, coors, carts)
-
-        # Check crash end of tick: if two cart swap positions
-        for coor1, id1 in coors.items():
-            if coor1 in prevCoors:
-                id2 = prevCoors[coor1] 
-                coor2 = idToCoors[id2]
-
-                if coor2 in prevCoors and prevCoors[coor2] == id1:
-                    print(id1, coor1, id2, coor2)
-                    return coor1[0], coor1[1]
 
         # Copy current coordinates to prevCoors for next tick
         prevCoors = dict(coors)

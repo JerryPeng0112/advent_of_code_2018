@@ -53,7 +53,7 @@ class Cart:
 
 
     def turn(self, symbol):
-        if symbol in Cart.refs.keys():
+        if symbol in Cart.refs:
             self.changeDir(Cart.refs[symbol][self.direction])
 
         elif symbol == '+':
@@ -139,10 +139,15 @@ def findLastCart(mineMap, carts):
             x, y = cart.x, cart.y
             cart.turn(mineMap[x][y])
 
-            # Check crash during tick
-            if (x, y) in coors.keys():
+            # Check crash
+            if (x, y) in coors:
                 removeList.add(coors[(x,y)])
                 removeList.add(cartID)
+
+            elif (x, y) in prevCoors:
+                removeList.add(prevCoors[(x, y)])
+                removeList.add(cartID)
+
 
             # Update coordinate record
             coors[(x, y)] = cartID
@@ -153,16 +158,6 @@ def findLastCart(mineMap, carts):
         #print(coors)
         #print(idToCoors)
         #printMap(mineMap, coors, carts)
-
-        # Check crash end of tick: if two cart swap positions
-        for coor1, id1 in coors.items():
-            if coor1 in prevCoors:
-                id2 = prevCoors[coor1] 
-                coor2 = idToCoors[id2]
-
-                if coor2 in prevCoors and prevCoors[coor2] == id1:
-                    removeList.add(id1)
-                    removeList.add(id2)
 
         # remove carts
         removeCarts(carts, removeList, coors, idToCoors)
@@ -175,15 +170,12 @@ def findLastCart(mineMap, carts):
 
 
 def removeCarts(carts, removeList, coors, idToCoors):
-    if removeList:
-        print(removeList)
-        for i in removeList:
-            print(idToCoors[i])
+    coors = {coor: cartID for coor, cartID in coors.items() if cartID not in removeList}
+
     for cartID in removeList:
         del carts[cartID]
         del idToCoors[cartID]
 
-    coors = {coor: cartID for coor, cartID in coors.items() if cartID not in removeList}
 
 
 def printMap(mineMap, coors, carts):
@@ -196,7 +188,7 @@ def printMap(mineMap, coors, carts):
         for j in range(numCols):
             char = mineMap[i][j]
 
-            if (i, j) in coors.keys():
+            if (i, j) in coors:
                 direction = carts[coors[(i, j)]].direction
 
                 if direction == DIRECTION.LEFT.value:
