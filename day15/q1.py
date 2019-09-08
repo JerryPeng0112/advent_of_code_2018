@@ -1,3 +1,5 @@
+from collections import deque
+
 class Character:
     def __init__(self, x, y, charType, enemyType):
         self.hp = 10
@@ -35,7 +37,6 @@ def main():
 
 
 def calcResult(world, chars, coorToID):
-
     printChars(chars, coorToID)
     
     while bothTypeAlive(chars):
@@ -64,7 +65,7 @@ def calcResult(world, chars, coorToID):
             if not attacked:
 
                 # Find a target and move
-                move(world, char, chars, coorToID)
+                tryMove(world, char, chars, coorToID)
 
                 # Find an adjacent target to attack
                 deadID, attacked = tryAttack(world, char, chars, coorToID)
@@ -75,6 +76,7 @@ def calcResult(world, chars, coorToID):
 
         printChars(chars, coorToID)
 
+        return 0
 
 
 def bothTypeAlive(chars):
@@ -82,7 +84,6 @@ def bothTypeAlive(chars):
 
 
 def tryAttack(world, char, chars, coorToID):
-
     deadID, attacked = None, False
     
     # Get the target to attack
@@ -90,9 +91,11 @@ def tryAttack(world, char, chars, coorToID):
 
     if target != None:
 
+        # Attack
         target.hp -= char.attack
         attacked = True
 
+        # When target is dead
         if target.hp <= 0:
             del chars[target.charType][target.id]
             del coorToID[target.charType][(target.x, target.y)]
@@ -102,33 +105,123 @@ def tryAttack(world, char, chars, coorToID):
 
 
 def getAdjacentTarget(world, char, chars, coorToID):
-
-    x = char.x
-    y = char.y
+    x, y = char.x, char.y
     enemyType = char.enemyType
 
-    targets = [(x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)]
-    targets = filter(lambda x: world[x[0]][x[1]] == '.', targets)
-    targets = list(filter(lambda x: x in coorToID[enemyType], targets))
+    # Get available adjacent targets, return first reading order object
+    # If none, return None
+    targets = getAdjacentCoor(x, y)
+    hasEnemy = lambda c: world[c[0]][c[1]] and c in coorToID[enemyType]
+    targets = list(filter(hasEnemy, targets))
 
-    firstCoor = getFirstCoor(targets)
+    # Choose coordinate first in reading order.
+    # If no item in list, return None
+    if len(targets) > 0:
 
-    if firstCoor != None:
+        firstCoor = getFirstCoor(targets)
         targetID = coorToID[enemyType][firstCoor]
         return chars[enemyType][targetID]
     
     return None
 
 
-def move(world, char, chars, coorToID):
-    pass
+def tryMove(world, char, chars, coorToID):
+
+    # Construct distance grid
+    sourceDistGrid = getDistances(world, char, coorToID)
+
+    # Get enemy neighboring coordinates
+    enemyNeighborCoors = getEnemyNeighborCoors(world, char, chars)
+
+    # Get the closest one with first reading order
+    reachable = lambda c: sourceDistGrid[c[0]][c[1]] > 0
+    reachableCoors = filter(reachable, enemyNeighborCoors)
+    minDist = min(map(lambda c: sourceDistGrid[c[0]][c[1]], reachableCoors))
+
+    equalMinDist = lambda c: sourceDistGrid[c[0]][c[1]] == minDist
+    minDistCoors = list(filter(equalMinDist, reachableCoors))
+
+    targetCoor = None
+    if len(minDistCoors) > 0:
+        targetCoor = getFirstCoor(minDistCoors)
+
+    for i in sourceDistGrid:
+        print(i)
+    print(enemyNeighborCoors)
+    print(list(reachableCoors))
+    print(targetCoor)
+
+
+
+    # distances = getDistances(from target)
+    # Check the char neighbors
+
+
+def getDistances(world, char, coorToID):
+    x, y = char.x, char.y
+    numRow = len(world)
+    numCol = len(world[0])
+
+    queue = deque()
+    distGrid = [[-1 for i in range(numCol)] for i in range(numRow)]
+    distGrid[x][y] = 0
+
+    appendValidNeighbors(world, coorToID, distGrid, queue, x, y)
+
+    while(queue):
+
+        # Get next coordinate, calculate distance based on neighbors
+        coor = queue.popleft()
+        x, y = coor[0], coor[1]
+
+        # If the coordinate distance is calculated, skip iteration
+        if (distGrid[x][y] != -1):
+            continue
+
+        neighbors = getAdjacentCoor(x, y)
+        appendValidNeighbors(world, coorToID, distGrid, queue, x, y)
+
+        discovered = lambda c: distGrid[c[0]][c[1]] != -1
+        coorToDist = lambda c: distGrid[c[0]][c[1]]
+
+        discoveredCoor = filter(discovered, neighbors)
+        minDist = min(map(coorToDist, discoveredCoor))
+        distGrid[coor[0]][coor[1]] = minDist + 1
+
+    return distGrid
+
+
+def getEnemyNeighborCoors(world, char, chars):
+    enemies = chars[char.enemyType]
+    coors = set()
+
+    for enemyID, enemy in enemies.items():
+
+        enemyNeighbors = getAdjacentCoor(enemy.x, enemy.y)
+        coors.update(enemyNeighbors)
+
+    return list(coors)
+    
+
+
+def appendValidNeighbors(world, coorToID, distGrid, queue, x, y):
+    # Append valid neighbors, which are not walls, occupied and
+    # distances not calculated
+    neighbors = getAdjacentCoor(x, y)
+    valid = lambda c: world[c[0]][c[1]] == '.' and c not in coorToID['elf'] and \
+            c not in coorToID['goblin'] and distGrid[c[0]][c[1]] == -1
+
+    neighbors = filter(valid, neighbors)
+    queue.extend(neighbors)
+
+
+def getAdjacentCoor(x, y):
+    return [(x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)]
 
 
 def getFirstCoor(targets):
-    if len(targets) > 0:
-        targets.sort(key=lambda x: (x[0], x[1]))
-        return targets[0]
-    return None
+    targets.sort(key=lambda x: (x[0], x[1]))
+    return targets[0]
 
 
 def printChars(chars, coorToID):
@@ -143,12 +236,12 @@ def printChars(chars, coorToID):
 
 
 def scanWorld(data):
-
     chars, elves, goblins = {}, {}, {}
     coorToID, elfCoorToID, goblinCoorToID = {}, {}, {}
     numRow = len(data)
     numCol = len(data[0])
 
+    # Record elves, goblins coordinates
     for i in range(numRow):
         for j in range(numCol):
 
