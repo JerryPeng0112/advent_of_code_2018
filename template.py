@@ -11,7 +11,7 @@ def readLine(line):
 
 def readFiles():
     data = []
-    file = open("input.txt", "r")
+    file = open('input.txt', 'r')
 
     for line in file:
         data.append(readLine(line))
@@ -20,5 +20,5 @@ def readFiles():
     return data
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
