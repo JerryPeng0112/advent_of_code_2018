@@ -1,5 +1,6 @@
 from copy import deepcopy
 from collections import deque
+from datetime import datetime
 
 class Character:
     def __init__(self, x, y, charType, enemyType):
@@ -30,22 +31,55 @@ class Elf(Character):
 
 def main():
 
+    start = datetime.now()
+    print(start)
+
     data = readFiles()
 
     world, chars, coorToID = scanWorld(data) 
 
-    roundNum = calcRound(world, chars, coorToID)
+    attack, outcome = calcLowestAttack(world, chars, coorToID)
 
-    outcome = calcOutCome(roundNum, chars)
-
+    print('Attack power:', attack)
     print('Outcome:', outcome)
+
+    
+    end = datetime.now()
+    print(end)
+    print(end - start)
+
+
+def calcLowestAttack(world, chars, coorToID):
+
+    attack = 3
+    lowestAttackFound = False
+    numElves = len(chars['elf'])
+
+    while not lowestAttackFound:
+
+        # Increment initial character attack power and run simulation
+        attack += 1
+        charsCopy = deepcopy(chars)
+        coorToIDCopy = deepcopy(coorToID)
+        
+        for charID, char in charsCopy['elf'].items():
+            char.attack = attack
+
+        fullRound = calcRound(world, charsCopy, coorToIDCopy)
+
+        if len(charsCopy['elf']) == numElves:
+            lowestAttackFound = True
+
+        print('Tried attack power:', attack)
+
+    outcome = calcOutCome(fullRound, charsCopy)
+
+    return attack, outcome
 
 
 def calcRound(world, chars, coorToID):
 
     roundNum = 0
-    inspectRounds = []
-    printInfo(world, chars, coorToID, roundNum)
     
     while bothTypeAlive(chars):
 
@@ -89,12 +123,6 @@ def calcRound(world, chars, coorToID):
 
         if isFullRound:
             roundNum += 1
-
-            # Print rounds using inspect round
-            if roundNum in inspectRounds:
-                printInfo(world, chars, coorToID, roundNum)
-
-    printInfo(world, chars, coorToID, roundNum)
 
     return roundNum
 
