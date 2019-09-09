@@ -38,13 +38,14 @@ def main():
 
     outcome = calcOutCome(roundNum, chars)
 
+    print('Outcome:', outcome)
+
 
 def calcRound(world, chars, coorToID):
 
     roundNum = 0
     inspectRounds = []
-    print("Initial state")
-    printInfo(world, chars, coorToID)
+    printInfo(world, chars, coorToID, roundNum)
     
     while bothTypeAlive(chars):
 
@@ -91,11 +92,9 @@ def calcRound(world, chars, coorToID):
 
             # Print rounds using inspect round
             if roundNum in inspectRounds:
-                print("Round: ", roundNum)
-                printInfo(world, chars, coorToID)
+                printInfo(world, chars, coorToID, roundNum)
 
-    print("Round: ", roundNum)
-    printInfo(world, chars, coorToID)
+    printInfo(world, chars, coorToID, roundNum)
 
     return roundNum
 
@@ -292,7 +291,9 @@ def getFirstCoor(targets):
     return targets[0]
 
 
-def printInfo(world, chars, coorToID):
+def printInfo(world, chars, coorToID, roundNum):
+
+    print('Round:', roundNum)
 
     # Sort and Print all character infos
     elves = list(chars['elf'].values())
@@ -378,7 +379,7 @@ def readLine(line):
 
 def readFiles():
     data = []
-    file = open("test4.txt", "r")
+    file = open("input.txt", "r")
 
     for line in file:
         data.append(readLine(line))
