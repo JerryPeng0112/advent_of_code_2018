@@ -35,6 +35,10 @@ def main():
 
     result = calcResult(world, chars, coorToID)
 
+    myList = [1, 2, 3]
+    myIter = filter(lambda x: x % 2 == 0, myList)
+    myIter2 = map(lambda x: x * 2, myIter)
+
 
 def calcResult(world, chars, coorToID):
     printChars(chars, coorToID)
@@ -60,15 +64,15 @@ def calcResult(world, chars, coorToID):
                 continue
 
             # Find an adjacent target to attack
-            deadID, attacked = tryAttack(world, char, chars, coorToID)
+            #deadID, attacked = tryAttack(world, char, chars, coorToID)
 
-            if not attacked:
+            #if not attacked:
 
                 # Find a target and move
-                tryMove(world, char, chars, coorToID)
+            tryMove(world, char, chars, coorToID)
 
-                # Find an adjacent target to attack
-                deadID, attacked = tryAttack(world, char, chars, coorToID)
+            # Find an adjacent target to attack
+            deadID, attacked = tryAttack(world, char, chars, coorToID)
 
             # If there are enemy character dead, append it to list
             if deadID != None:
@@ -83,82 +87,59 @@ def bothTypeAlive(chars):
     return chars['elf'] and chars['goblin']
 
 
-def tryAttack(world, char, chars, coorToID):
-    deadID, attacked = None, False
-    
-    # Get the target to attack
-    target = getAdjacentTarget(world, char, chars, coorToID)
-
-    if target != None:
-
-        # Attack
-        target.hp -= char.attack
-        attacked = True
-
-        # When target is dead
-        if target.hp <= 0:
-            del chars[target.charType][target.id]
-            del coorToID[target.charType][(target.x, target.y)]
-            deadID = target.id
-
-    return deadID, attacked
-
-
-def getAdjacentTarget(world, char, chars, coorToID):
-    x, y = char.x, char.y
-    enemyType = char.enemyType
-
-    # Get available adjacent targets, return first reading order object
-    # If none, return None
-    targets = getAdjacentCoor(x, y)
-    hasEnemy = lambda c: world[c[0]][c[1]] and c in coorToID[enemyType]
-    targets = list(filter(hasEnemy, targets))
-
-    # Choose coordinate first in reading order.
-    # If no item in list, return None
-    if len(targets) > 0:
-
-        firstCoor = getFirstCoor(targets)
-        targetID = coorToID[enemyType][firstCoor]
-        return chars[enemyType][targetID]
-    
-    return None
-
-
 def tryMove(world, char, chars, coorToID):
 
     # Construct distance grid
-    sourceDistGrid = getDistances(world, char, coorToID)
+    distGridChar = getDistances(world, char.x, char.y, coorToID)
 
     # Get enemy neighboring coordinates
     enemyNeighborCoors = getEnemyNeighborCoors(world, char, chars)
 
-    # Get the closest one with first reading order
-    reachable = lambda c: sourceDistGrid[c[0]][c[1]] > 0
-    reachableCoors = filter(reachable, enemyNeighborCoors)
-    minDist = min(map(lambda c: sourceDistGrid[c[0]][c[1]], reachableCoors))
+    # Get closest reachable space with first reading order
+    targetCoor = findClosestCoor(distGridChar, enemyNeighborCoors)
 
-    equalMinDist = lambda c: sourceDistGrid[c[0]][c[1]] == minDist
+    # Construct distance grid from target
+    distGridTarget = getDistances(world, *targetCoor, coorToID)
+
+    # Get neighbor coordinates from character
+    sourceNeighbors = getAdjacentCoor(char.x, char.y)
+
+    # Get reachable space with first reading order
+    moveCoor = findClosestCoor(distGridTarget, sourceNeighbors)
+
+    # Move character
+    if moveCoor:
+        print("MOVED")
+        del coorToID[char.charType][(char.x, char.y)]
+        char.x = moveCoor[0]
+        char.y = moveCoor[1]
+        coorToID[char.charType][(char.x, char.y)] = char.id
+
+
+def findClosestCoor(distGrid, coors):
+
+    # Lambda Functions
+    # Check if the coordinate is reachable
+    reachable = lambda c: distGrid[c[0]][c[1]] > -1
+    # Map coordinate to distance
+    coorToDist = lambda c: distGrid[c[0]][c[1]]
+    # Check if distance equal minDist
+    equalMinDist = lambda c: distGrid[c[0]][c[1]] == minDist
+
+    # Get reachable coordinates, and get ones with minimum distance
+    reachableCoors = list(filter(reachable, coors))
+    minDist = min(map(coorToDist, reachableCoors))
     minDistCoors = list(filter(equalMinDist, reachableCoors))
 
-    targetCoor = None
+    # Choose first coordinate from reading order
+    chosenCoor = None
     if len(minDistCoors) > 0:
-        targetCoor = getFirstCoor(minDistCoors)
+        chosenCoor = getFirstCoor(minDistCoors)
 
-    for i in sourceDistGrid:
-        print(i)
-    print(enemyNeighborCoors)
-    print(list(reachableCoors))
-    print(targetCoor)
+    return chosenCoor
 
 
-
-    # distances = getDistances(from target)
-    # Check the char neighbors
-
-
-def getDistances(world, char, coorToID):
-    x, y = char.x, char.y
+def getDistances(world, x, y, coorToID):
     numRow = len(world)
     numCol = len(world[0])
 
@@ -203,7 +184,6 @@ def getEnemyNeighborCoors(world, char, chars):
     return list(coors)
     
 
-
 def appendValidNeighbors(world, coorToID, distGrid, queue, x, y):
     # Append valid neighbors, which are not walls, occupied and
     # distances not calculated
@@ -213,6 +193,48 @@ def appendValidNeighbors(world, coorToID, distGrid, queue, x, y):
 
     neighbors = filter(valid, neighbors)
     queue.extend(neighbors)
+
+
+def tryAttack(world, char, chars, coorToID):
+    deadID, attacked = None, False
+    
+    # Get the target to attack
+    target = getAdjacentTarget(world, char, chars, coorToID)
+
+    if target != None:
+
+        # Attack
+        target.hp -= char.attack
+        attacked = True
+
+        # When target is dead
+        if target.hp <= 0:
+            del chars[target.charType][target.id]
+            del coorToID[target.charType][(target.x, target.y)]
+            deadID = target.id
+
+    return deadID, attacked
+
+
+def getAdjacentTarget(world, char, chars, coorToID):
+    x, y = char.x, char.y
+    enemyType = char.enemyType
+
+    # Get available adjacent targets, return first reading order object
+    # If none, return None
+    targets = getAdjacentCoor(x, y)
+    hasEnemy = lambda c: world[c[0]][c[1]] and c in coorToID[enemyType]
+    targets = list(filter(hasEnemy, targets))
+
+    # Choose coordinate first in reading order.
+    # If no item in list, return None
+    if len(targets) > 0:
+
+        firstCoor = getFirstCoor(targets)
+        targetID = coorToID[enemyType][firstCoor]
+        return chars[enemyType][targetID]
+    
+    return None
 
 
 def getAdjacentCoor(x, y):
