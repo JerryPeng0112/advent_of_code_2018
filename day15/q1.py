@@ -1,3 +1,4 @@
+from copy import deepcopy
 from collections import deque
 
 class Character:
@@ -41,7 +42,9 @@ def main():
 
 
 def calcResult(world, chars, coorToID):
-    printChars(chars, coorToID)
+    roundNum = 0
+    inspectRounds = [1, 2, 23, 24, 25, 26, 27, 28, 47]
+    printInfo(world, chars, coorToID)
     
     while bothTypeAlive(chars):
 
@@ -64,27 +67,73 @@ def calcResult(world, chars, coorToID):
                 continue
 
             # Find an adjacent target to attack
-            #deadID, attacked = tryAttack(world, char, chars, coorToID)
+            deadID, attacked = tryAttack(world, char, chars, coorToID)
 
-            #if not attacked:
+            if not attacked:
 
                 # Find a target and move
-            tryMove(world, char, chars, coorToID)
+                tryMove(world, char, chars, coorToID)
 
-            # Find an adjacent target to attack
-            deadID, attacked = tryAttack(world, char, chars, coorToID)
+                # Find an adjacent target to attack
+                deadID, attacked = tryAttack(world, char, chars, coorToID)
 
             # If there are enemy character dead, append it to list
             if deadID != None:
                 deadIDs[char.enemyType].append(deadID)
 
-        printChars(chars, coorToID)
+        roundNum += 1
+        if roundNum in inspectRounds:
+            print("Round: ", roundNum)
+            printInfo(world, chars, coorToID)
+            input()
 
-        return 0
+    return 0
 
 
 def bothTypeAlive(chars):
     return chars['elf'] and chars['goblin']
+
+
+def tryAttack(world, char, chars, coorToID):
+    deadID, attacked = None, False
+    
+    # Get the target to attack
+    target = getAdjacentTarget(world, char, chars, coorToID)
+
+    if target != None:
+
+        # Attack
+        target.hp -= char.attack
+        attacked = True
+
+        # When target is dead
+        if target.hp <= 0:
+            del chars[target.charType][target.id]
+            del coorToID[target.charType][(target.x, target.y)]
+            deadID = target.id
+
+    return deadID, attacked
+
+
+def getAdjacentTarget(world, char, chars, coorToID):
+    x, y = char.x, char.y
+    enemyType = char.enemyType
+
+    # Get available adjacent targets, return first reading order object
+    # If none, return None
+    targets = getAdjacentCoor(x, y)
+    hasEnemy = lambda c: world[c[0]][c[1]] and c in coorToID[enemyType]
+    targets = list(filter(hasEnemy, targets))
+
+    # Choose coordinate first in reading order.
+    # If no item in list, return None
+    if len(targets) > 0:
+
+        firstCoor = getFirstCoor(targets)
+        targetID = coorToID[enemyType][firstCoor]
+        return chars[enemyType][targetID]
+    
+    return None
 
 
 def tryMove(world, char, chars, coorToID):
@@ -109,7 +158,6 @@ def tryMove(world, char, chars, coorToID):
 
     # Move character
     if moveCoor:
-        print("MOVED")
         del coorToID[char.charType][(char.x, char.y)]
         char.x = moveCoor[0]
         char.y = moveCoor[1]
@@ -195,48 +243,6 @@ def appendValidNeighbors(world, coorToID, distGrid, queue, x, y):
     queue.extend(neighbors)
 
 
-def tryAttack(world, char, chars, coorToID):
-    deadID, attacked = None, False
-    
-    # Get the target to attack
-    target = getAdjacentTarget(world, char, chars, coorToID)
-
-    if target != None:
-
-        # Attack
-        target.hp -= char.attack
-        attacked = True
-
-        # When target is dead
-        if target.hp <= 0:
-            del chars[target.charType][target.id]
-            del coorToID[target.charType][(target.x, target.y)]
-            deadID = target.id
-
-    return deadID, attacked
-
-
-def getAdjacentTarget(world, char, chars, coorToID):
-    x, y = char.x, char.y
-    enemyType = char.enemyType
-
-    # Get available adjacent targets, return first reading order object
-    # If none, return None
-    targets = getAdjacentCoor(x, y)
-    hasEnemy = lambda c: world[c[0]][c[1]] and c in coorToID[enemyType]
-    targets = list(filter(hasEnemy, targets))
-
-    # Choose coordinate first in reading order.
-    # If no item in list, return None
-    if len(targets) > 0:
-
-        firstCoor = getFirstCoor(targets)
-        targetID = coorToID[enemyType][firstCoor]
-        return chars[enemyType][targetID]
-    
-    return None
-
-
 def getAdjacentCoor(x, y):
     return [(x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)]
 
@@ -246,15 +252,44 @@ def getFirstCoor(targets):
     return targets[0]
 
 
-def printChars(chars, coorToID):
+def printInfo(world, chars, coorToID):
+
+    # Print all character infos
+    print("Elves")
     for k, v in chars['elf'].items():
         print(vars(v))
+    print("Goblins")
     for k, v in chars['goblin'].items():
         print(vars(v))
-    for k, v in coorToID['elf'].items():
-        print(k, v)
-    for k, v in coorToID['goblin'].items():
-        print(k, v)
+
+    # Verify coor and ID linked correctly
+    if len(chars['elf']) != len(coorToID['elf']):
+        print("Elf: mismatch coor ID length")
+    if len(chars['goblin']) != len(coorToID['goblin']):
+        print("Goblin: mismatch coor ID length")
+
+    for charID, char in chars['elf'].items():
+        if coorToID['elf'][(char.x, char.y)] != char.id:
+            print('Elf: coor ID linkage problem')
+    for charID, char in chars['goblin'].items():
+        if coorToID['goblin'][(char.x, char.y)] != char.id:
+            print('Goblin: coor ID linkage problem')
+
+    # Print map
+    worldCopy = deepcopy(world)
+    symbols = {
+        'goblin': 'G',
+        'elf': 'E',
+    }
+    for charID, char in chars['elf'].items():
+        worldCopy[char.x][char.y] = symbols[char.charType]
+    for charID, char in chars['goblin'].items():
+        worldCopy[char.x][char.y] = symbols[char.charType]
+
+    for row in worldCopy:
+        print(''.join(row))
+
+    print()
 
 
 def scanWorld(data):
