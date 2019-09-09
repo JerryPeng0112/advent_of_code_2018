@@ -3,7 +3,7 @@ from collections import deque
 
 class Character:
     def __init__(self, x, y, charType, enemyType):
-        self.hp = 10
+        self.hp = 200
         self.attack = 3
         self.charType = charType
         self.enemyType = enemyType
@@ -34,20 +34,19 @@ def main():
 
     world, chars, coorToID = scanWorld(data) 
 
-    result = calcResult(world, chars, coorToID)
+    roundNum = calcRound(world, chars, coorToID)
 
-    myList = [1, 2, 3]
-    myIter = filter(lambda x: x % 2 == 0, myList)
-    myIter2 = map(lambda x: x * 2, myIter)
+    outcome = calcOutCome(roundNum, chars)
 
 
-def calcResult(world, chars, coorToID):
+def calcRound(world, chars, coorToID):
+
     roundNum = 0
-    inspectRounds = [1, 2, 23, 24, 25, 26, 27, 28, 47]
+    inspectRounds = []
+    print("Initial state")
     printInfo(world, chars, coorToID)
     
     while bothTypeAlive(chars):
-
 
         # Merge elves and goblins into a list and sort by reading order
         elves = chars['elf']
@@ -60,7 +59,13 @@ def calcResult(world, chars, coorToID):
         deadIDs['elf'] = []
         deadIDs['goblin'] = []
 
+        # Check if full round passed
+        isFullRound = True
+
         for char in charList:
+
+            if not bothTypeAlive(chars):
+                isFullRound = False
 
             # If character dead, skip it
             if char.id in deadIDs[char.charType]:
@@ -81,13 +86,18 @@ def calcResult(world, chars, coorToID):
             if deadID != None:
                 deadIDs[char.enemyType].append(deadID)
 
-        roundNum += 1
-        if roundNum in inspectRounds:
-            print("Round: ", roundNum)
-            printInfo(world, chars, coorToID)
-            input()
+        if isFullRound:
+            roundNum += 1
 
-    return 0
+            # Print rounds using inspect round
+            if roundNum in inspectRounds:
+                print("Round: ", roundNum)
+                printInfo(world, chars, coorToID)
+
+    print("Round: ", roundNum)
+    printInfo(world, chars, coorToID)
+
+    return roundNum
 
 
 def bothTypeAlive(chars):
@@ -98,19 +108,19 @@ def tryAttack(world, char, chars, coorToID):
     deadID, attacked = None, False
     
     # Get the target to attack
-    target = getAdjacentTarget(world, char, chars, coorToID)
+    enemy = getAdjacentTarget(world, char, chars, coorToID)
 
-    if target != None:
+    if enemy != None:
 
         # Attack
-        target.hp -= char.attack
+        enemy.hp -= char.attack
         attacked = True
 
         # When target is dead
-        if target.hp <= 0:
-            del chars[target.charType][target.id]
-            del coorToID[target.charType][(target.x, target.y)]
-            deadID = target.id
+        if enemy.hp <= 0:
+            del chars[enemy.charType][enemy.id]
+            del coorToID[enemy.charType][(enemy.x, enemy.y)]
+            deadID = enemy.id
 
     return deadID, attacked
 
@@ -121,17 +131,23 @@ def getAdjacentTarget(world, char, chars, coorToID):
 
     # Get available adjacent targets, return first reading order object
     # If none, return None
-    targets = getAdjacentCoor(x, y)
+    adjacentCoors = getAdjacentCoor(x, y)
     hasEnemy = lambda c: world[c[0]][c[1]] and c in coorToID[enemyType]
-    targets = list(filter(hasEnemy, targets))
+    enemyCoors = list(filter(hasEnemy, adjacentCoors))
 
-    # Choose coordinate first in reading order.
     # If no item in list, return None
-    if len(targets) > 0:
+    if len(enemyCoors) > 0:
 
-        firstCoor = getFirstCoor(targets)
-        targetID = coorToID[enemyType][firstCoor]
-        return chars[enemyType][targetID]
+        # Choose lowest hp enemy
+        enemyIDs = map(lambda c: coorToID[enemyType][c], enemyCoors)
+        minHP = min(map(lambda charID: chars[enemyType][charID].hp, enemyIDs))
+        hpEqualMinHP = lambda c: chars[enemyType][coorToID[enemyType][c]].hp == minHP
+        enemyCoorsMinHP = list(filter(hpEqualMinHP, enemyCoors))
+
+        # Choose first in reading order.
+        firstCoor = getFirstCoor(enemyCoorsMinHP)
+        enemyID = coorToID[enemyType][firstCoor]
+        return chars[enemyType][enemyID]
     
     return None
 
@@ -146,6 +162,9 @@ def tryMove(world, char, chars, coorToID):
 
     # Get closest reachable space with first reading order
     targetCoor = findClosestCoor(distGridChar, enemyNeighborCoors)
+
+    if not targetCoor:
+        return
 
     # Construct distance grid from target
     distGridTarget = getDistances(world, *targetCoor, coorToID)
@@ -174,8 +193,14 @@ def findClosestCoor(distGrid, coors):
     # Check if distance equal minDist
     equalMinDist = lambda c: distGrid[c[0]][c[1]] == minDist
 
-    # Get reachable coordinates, and get ones with minimum distance
+    # Get reachable coordinates
     reachableCoors = list(filter(reachable, coors))
+
+    # If no reachable coordinate found, return None
+    if not reachableCoors:
+        return None
+
+    # Get coordinates with minimum distances
     minDist = min(map(coorToDist, reachableCoors))
     minDistCoors = list(filter(equalMinDist, reachableCoors))
 
@@ -243,6 +268,21 @@ def appendValidNeighbors(world, coorToID, distGrid, queue, x, y):
     queue.extend(neighbors)
 
 
+def calcOutCome(roundNum, chars):
+
+    charsWon = None
+    if chars['elf']:
+        charsWon = chars['elf']
+    elif chars['goblin']:
+        charsWon = chars['goblin']
+
+    totalHP = sum(map(lambda c: c.hp, list(charsWon.values())))
+
+    print(roundNum, '*', totalHP, '=', roundNum * totalHP)
+
+    return roundNum * totalHP
+
+
 def getAdjacentCoor(x, y):
     return [(x - 1, y), (x, y - 1), (x, y + 1), (x + 1, y)]
 
@@ -254,13 +294,18 @@ def getFirstCoor(targets):
 
 def printInfo(world, chars, coorToID):
 
-    # Print all character infos
+    # Sort and Print all character infos
+    elves = list(chars['elf'].values())
+    goblins = list(chars['goblin'].values())
+    elves.sort(key=lambda c: (c.x, c.y))
+    goblins.sort(key=lambda c: (c.x, c.y))
+
     print("Elves")
-    for k, v in chars['elf'].items():
-        print(vars(v))
+    for elf in elves:
+        print(vars(elf))
     print("Goblins")
-    for k, v in chars['goblin'].items():
-        print(vars(v))
+    for goblin in goblins:
+        print(vars(goblin))
 
     # Verify coor and ID linked correctly
     if len(chars['elf']) != len(coorToID['elf']):
@@ -333,7 +378,7 @@ def readLine(line):
 
 def readFiles():
     data = []
-    file = open("test2.txt", "r")
+    file = open("test4.txt", "r")
 
     for line in file:
         data.append(readLine(line))
@@ -344,35 +389,3 @@ def readFiles():
 
 if __name__ == "__main__":
     main()
-
-
-"""
-Plan:
-Read map, map all Goblins and Elves to goblins/Elves(dict: id->obj)
-for sorted goblins/elves by coordinates
-    Check if there are adjacent enemies to attack
-    if not, move
-        Create distance map, find nearest reachable target.
-        From that target, create distance map, choose step.
-    After move, check if there are adjacent enemies to attack
-"""
-
-"""
-walls (#), space (.), Goblin (G) Elf (E)
-Round: Move, Attack
-
-If in range of attack, don't move, attack instead.
-
-Move:
-- Begin by identifying all possible targets
-- Find nearest reachable target, if tied choose first in reading order
-- Choose step with shortest path, if tied, choose first in reading order
-
-Attack:
-- If unites in range, fewest HP selected. If tied, choose first in reading order
-- Once units die, its square becomes a space.
-
-End:
-- Combat only ends when a unit finds no targets during its turn
-- Find (number of full rounds that were completed) * (sum of the HPs of remaining units at the moment combats end).
-"""
