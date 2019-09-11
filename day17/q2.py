@@ -12,14 +12,14 @@ def main():
     world = runWater(world, start)
     printWorldImage(world)
 
-    numWaterSpaces = countWaterSpaces(world, minY)
+    numRetainedWaterSpaces = countRetainedWater(world, minY)
 
-    print(numWaterSpaces)
+    print(numRetainedWaterSpaces)
 
 
-def countWaterSpaces(world, minY):
-    # Count spaces that have water symbols '|', '~'
-    countSymbols = lambda d: len(list(filter(lambda x: x in ['|', '~'], d)))
+def countRetainedWater(world, minY):
+    # Count spaces that have water symbols '~'
+    countSymbols = lambda d: len(list(filter(lambda x: x == '~', d)))
     rowCounts = list(map(lambda d: countSymbols(d), world[minY:]))
     return sum(rowCounts)
 
