@@ -1,19 +1,24 @@
 import re
 
 
-
-
 def main():
 
     inputData = readFiles()
 
     data = formatData(inputData)
 
-    result = getResult(data) 
+    opsMatched = getOpsMatched(data) 
+
+    opFuncMap = solveOpFuncs(opsMatched)
+
+    testProgram = readTestProgram()
+
+    result = runInstr(opFuncMap, testProgram)
+
     print(result)
 
 
-def getResult(data):
+def getOpsMatched(data):
     # All instruction operation functions
     ops = ['addr', 'addi', 'mulr', 'muli', 'banr', 'bani', 'borr', 'bori', \
             'setr', 'seti', 'gtir', 'gtri', 'gtrr', 'eqir', 'eqri', 'eqrr']
@@ -21,18 +26,61 @@ def getResult(data):
     # Test if the instruction works on a case data
     testOp = lambda op, d: d['regEnd'] == op(list(d['regStart']), d['instr'])
 
-    # Map to list of booleans values from testing the instruction functions
-    # on a case data
-    opsMatched = lambda d: map(lambda op: testOp(globals()[op], d), ops)
+    # Filter the instruction functions that work
+    opFuncs = lambda d: filter(lambda op: testOp(globals()[op], d), ops)
+    
+    # Map instruction functions to op -> funcs dictionary:
+    # { op: [funcs...] }
+    opToFuncs = lambda d: [d['instr']['op'], list(opFuncs(d))]
 
-    # For each case data, reduce the list of boolean values to number of Trues
-    getNumOpsMatched = lambda d: len(list(filter(lambda x: x, opsMatched(d))))
+    # Get the instruction functions that work on each piece of case data
+    opsMatched = list(map(opToFuncs, data))
 
-    # Get the number of instruction functions that work on each piece of case data
-    numOpsMatched = map(getNumOpsMatched, data)
+    return opsMatched
 
-    # Return the number of cases where instructions matched is >= 3
-    return len(list(filter(lambda d: d >= 3, numOpsMatched)))
+
+def solveOpFuncs(opsMatched):
+    # Dictionary maps opcode to instruction function
+    opFuncMap = {}
+
+    # Find all 16 opcode functions
+    while len(opFuncMap) != 16:
+        
+        addedOp = set()
+        addedFunc = set()
+        count = 0
+        
+        for case in opsMatched:
+            
+            op = case[0]
+            funcs = case[1]
+
+            # If there are only 1 corresponding instruction function, add to map
+            if len(funcs) == 1:
+                count += 1
+                opFuncMap[op] = funcs[0]
+                addedOp.add(op)
+                addedFunc.add(funcs[0])
+
+        # Filter out cases with added opcode
+        opsMatched = list(filter(lambda d: d[0] not in addedOp, opsMatched))
+
+        # Filter out funcs with added instruction function
+        for idx, case in enumerate(opsMatched):
+            opsMatched[idx][1] = list(filter(lambda d: d not in addedFunc, case[1]))
+
+    return opFuncMap
+
+
+def runInstr(opFuncMap, program):
+    reg = [0, 0, 0, 0]
+    
+    for instr in program:
+        func = opFuncMap[instr['op']]
+        reg = globals()[func](reg, instr)
+
+    return reg[0]
+    
 
 
 """
@@ -166,7 +214,6 @@ def formatData(inputData):
     return data
 
 
-
 def readFiles():
     data = None
 
@@ -176,6 +223,25 @@ def readFiles():
     data = data.split('\n')
     data = [d for d in data if d]
 
+    return data
+
+
+def readTestProgram():
+    data = None
+
+    with open('input2.txt') as f:
+        data = f.read()
+
+    data = data.split('\n')
+    data = [d for d in data if d]
+
+    # Map instruction string to dict format: {'op', 'A', 'B', 'C'}
+    data = map(lambda d: d.split(' '), data)
+    data = list(map(lambda d: list(map(lambda x: int(x), d)), data))
+
+    instrDict = lambda d: {'op': d[0], 'A': d[1], 'B': d[2], 'C': d[3]}
+    data = [instrDict(d) for d in data]
+    
     return data
 
 
