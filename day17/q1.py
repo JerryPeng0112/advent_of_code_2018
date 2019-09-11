@@ -28,6 +28,8 @@ def runWater(world, start):
     
     # Queue for flowing water starting points
     flowQueue = deque([start])
+
+    # Set for recording Water flow starting points
     flows = set()
 
     # Loop til all water flow ends
@@ -52,6 +54,8 @@ def runWater(world, start):
 
             newFlows = fill(world, dropSpace, flows)
 
+            # If there are new flows, add them to queue, as well as the flowstart
+            # To ensure tanks are filled completely
             if newFlows:
                 flowQueue.extend(newFlows)
                 flowQueue.append(flowStart)
@@ -99,6 +103,8 @@ def fill(world, dropSpace, flows):
 
         # Check space below is not a wall or water
         if getSpace(world, belowSpace) not in ('~', '#'):
+
+            # Check if new flow is added prior
             if tuple(flowSpace) not in flows:
                 flows.add(tuple(flowSpace))
                 setSpace(world, flowSpace, '|')
@@ -122,6 +128,8 @@ def fill(world, dropSpace, flows):
 
         # Check space below is not a wall or water
         if getSpace(world, belowSpace) not in ('~', '#'):
+
+            # Check if new flow is added prior
             if tuple(flowSpace) not in flows:
                 flows.add(tuple(flowSpace))
                 newFlows.append(flowSpace)
