@@ -54,7 +54,6 @@ def getMaxDepth(start):
                 curr.s.depth = currDepth + 1
                 roomQueue.append(curr.s)
 
-        print(currDepth)
         maxDepth = max(maxDepth, currDepth)
 
     return maxDepth

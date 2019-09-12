@@ -16,12 +16,14 @@ def main():
 
     start = buildRooms(pathStr)
 
-    maxDepth = getMaxDepth(start)
+    count = getNumQualifiedRooms(start)
+
+    print(count)
 
 
-def getMaxDepth(start):
+def getNumQualifiedRooms(start):
     
-    maxDepth = 0
+    count = 0
     start.depth = 0
     roomQueue = deque([start])
 
@@ -54,10 +56,10 @@ def getMaxDepth(start):
                 curr.s.depth = currDepth + 1
                 roomQueue.append(curr.s)
 
-        print(currDepth)
-        maxDepth = max(maxDepth, currDepth)
+        if currDepth >= 1000:
+            count += 1
 
-    return maxDepth
+    return count
 
 
 def buildRooms(pathStr):
