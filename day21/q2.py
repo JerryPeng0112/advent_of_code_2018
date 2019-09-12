@@ -1,3 +1,4 @@
+from collections import deque
 import re
 
 
@@ -7,37 +8,40 @@ def main():
 
     ipReg, program = parseProgram(fileData)
 
-    reg = runProgram(ipReg, program)
+    #reg = runProgram(ipReg, program)
+
+    r4 = runOptimizedProgram(program[7]['A'])
+    
+    print(r4)
 
 
-def runProgram(ipReg, program):
+def runOptimizedProgram(num):
+    r4 = 0
+    r4Mem = set()
+    lastR4 = -1
 
-    # Initial registers
-    reg = [0] * 6
-    reg[0] = 16128384
-    print('r0:', reg[0])
+    while True:
+        r3 = r4 | 65536
+        r4 = num
 
-    # Run program when instruction pointer is not over program length
-    while(reg[ipReg] < len(program)):
+        while True:
 
-        # Get instruction
-        instr = program[reg[ipReg]]
+            r4 = ((((r3 & 255) + r4) & 16777215) * 65899) & 16777215
+            
+            if r3 < 256:
 
-        # Execute instruction
-        globals()[instr['op']](reg, instr)
+                # If r4 not found, add it to set
+                if r4 not in r4Mem:
+                    r4Mem.add(r4)
+                    lastR4 = r4
+                    break
 
-        # Increment instruction pointer
-        reg[ipReg] += 1
+                # If repeated r4 found, output last r4
+                else:
+                    return lastR4
 
-        """
-        Program only halts when program hits line 28 and r0 == r4.
-        r0 never changes throughout program run.
-        Run program and look at registers when program hits line 28.
-        """
-        if reg[ipReg] == 28:
-            print(reg)
-
-    return reg
+            # Optimized from test program line 18-26
+            r3 = r3 // 256
 
 
 def parseProgram(fileData):
