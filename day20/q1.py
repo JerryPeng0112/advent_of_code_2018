@@ -18,6 +18,8 @@ def main():
 
     maxDepth = getMaxDepth(start)
 
+    print(maxDepth)
+
 
 def getMaxDepth(start):
     
